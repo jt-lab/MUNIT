@@ -2,12 +2,13 @@
 Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
-from torch.utils.serialization import load_lua
+import torchfile
 from torch.utils.data import DataLoader
 from networks import Vgg16
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
 from torchvision import transforms
+import torchvision.models as models
 from data import ImageFilelist, ImageFolder
 import torch
 import torch.nn as nn
@@ -99,7 +100,7 @@ def get_data_loader_folder(input_folder, batch_size, train, new_size=None,
 
 def get_config(config):
     with open(config, 'r') as stream:
-        return yaml.load(stream)
+        return yaml.load(stream, Loader=yaml.FullLoader)
 
 
 def eformat(f, prec):
@@ -223,17 +224,21 @@ def load_vgg16(model_dir):
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     if not os.path.exists(os.path.join(model_dir, 'vgg16.weight')):
-        if not os.path.exists(os.path.join(model_dir, 'vgg16.t7')):
-            os.system('wget https://www.dropbox.com/s/76l3rt4kyi3s8x7/vgg16.t7?dl=1 -O ' + os.path.join(model_dir, 'vgg16.t7'))
-        vgglua = load_lua(os.path.join(model_dir, 'vgg16.t7'))
+        if not os.path.exists(os.path.join(model_dir, 'vgg16.pth')):
+            os.system('wget https://download.pytorch.org/models/vgg16-397923af.pth -O ' + os.path.join(model_dir, 'vgg16.pth'))
+        '''
+        vgglua = torchfile.load(os.path.join(model_dir, 'vgg16.pth'))
         vgg = Vgg16()
         for (src, dst) in zip(vgglua.parameters()[0], vgg.parameters()):
             dst.data[:] = src
         torch.save(vgg.state_dict(), os.path.join(model_dir, 'vgg16.weight'))
+        '''
     vgg = Vgg16()
-    vgg.load_state_dict(torch.load(os.path.join(model_dir, 'vgg16.weight')))
-    return vgg
+    vgg.load_state_dict(torch.load(os.path.join(model_dir, 'vgg16.pth')), strict=False)
 
+    return vgg
+def load_vgg19():
+    return models.vgg19(pretrained=True)
 def load_inception(model_path):
     state_dict = torch.load(model_path)
     model = inception_v3(pretrained=False, transform_input=True)

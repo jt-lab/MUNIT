@@ -3,10 +3,11 @@ Copyright (C) 2017 NVIDIA Corporation.  All rights reserved.
 Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 """
 from networks import AdaINGen, MsImageDis, VAEGen
-from utils import weights_init, get_model_list, vgg_preprocess, load_vgg16, get_scheduler
+from utils import weights_init, get_model_list, vgg_preprocess, load_vgg16, load_vgg19, get_scheduler
 from torch.autograd import Variable
 import torch
 import torch.nn as nn
+import torchvision.models as models
 import os
 
 class MUNIT_Trainer(nn.Module):
@@ -46,6 +47,7 @@ class MUNIT_Trainer(nn.Module):
         # Load VGG model if needed
         if 'vgg_w' in hyperparameters.keys() and hyperparameters['vgg_w'] > 0:
             self.vgg = load_vgg16(hyperparameters['vgg_model_path'] + '/models')
+            #self.vgg = models.vgg16(pretrained=True)
             self.vgg.eval()
             for param in self.vgg.parameters():
                 param.requires_grad = False
@@ -142,6 +144,7 @@ class MUNIT_Trainer(nn.Module):
         x_ba1, x_ba2 = torch.cat(x_ba1), torch.cat(x_ba2)
         x_ab1, x_ab2 = torch.cat(x_ab1), torch.cat(x_ab2)
         self.train()
+
         return x_a, x_a_recon, x_ab1, x_ab2, x_b, x_b_recon, x_ba1, x_ba2
 
     def dis_update(self, x_a, x_b, hyperparameters):
