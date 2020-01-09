@@ -72,10 +72,12 @@ def get_all_data_loaders(conf):
 
 
 def get_data_loader_list(root, file_list, batch_size, train, new_size=None,
-                           height=256, width=256, num_workers=4, crop=True):
+                           height=256, width=256, num_workers=4, crop=True, noise=False, affine=False):
     transform_list = [transforms.ToTensor(),
                       transforms.Normalize((0.5, 0.5, 0.5),
                                            (0.5, 0.5, 0.5))]
+    transform_list = [transforms.RandomApply(AddGaussianNoise(), p=0.1)] + transform_list if noise else transform_list
+    transform_list = [transforms.RandomAffine(5)] + transform_list if affine else transform_list
     transform_list = [transforms.RandomCrop((height, width))] + transform_list if crop else transform_list
     transform_list = [transforms.Resize(new_size)] + transform_list if new_size is not None else transform_list
     transform_list = [transforms.RandomHorizontalFlip()] + transform_list if train else transform_list
@@ -296,6 +298,17 @@ def weights_init(init_type='gaussian'):
 
     return init_fun
 
+
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 class Timer:
     def __init__(self, msg):

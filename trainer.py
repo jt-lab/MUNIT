@@ -120,8 +120,9 @@ class MUNIT_Trainer(nn.Module):
     def compute_vgg_loss(self, vgg, img, target):
         img_vgg = vgg_preprocess(img)
         target_vgg = vgg_preprocess(target)
-        img_fea = vgg(img_vgg)
-        target_fea = vgg(target_vgg)
+        with torch.no_grad():
+            img_fea = vgg(img_vgg)
+            target_fea = vgg(target_vgg)
         return torch.mean((self.instancenorm(img_fea) - self.instancenorm(target_fea)) ** 2)
 
     def sample(self, x_a, x_b):
